@@ -77,13 +77,14 @@ export const routes: Record<RouteId, {
 }
 
 export const projectsNode = {
-  title: 'O que já passou por este fluxo.',
+  title: 'Projetos entregues & parcerias formadas.',
 }
 
 export const projects = [
   { title: 'Triagem de e-mails com IA', text: 'Classificação automática de e-mails para um escritório de contabilidade.', tags: ['Automação', 'IA'] },
   { title: 'Comunidade Daniel Burlini', text: 'Site e comunidade para um editor de vídeo.', tags: ['Web', 'Comunidade'] },
   { title: 'Psicóloga Debora', text: 'Landing page para uma psicóloga.', tags: ['Web', 'Landing page'] },
+  { title: 'Setor de automações da HBS', text: 'Desenvolvemos todo o ecossistema de fluxos de automação da High Business School, escola da Victória Ferrari.', tags: ['Automação', 'Parceria'] },
 ]
 
 export const stackNode = {
