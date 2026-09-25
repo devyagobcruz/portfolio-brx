@@ -2,8 +2,8 @@
 // A voz é sempre a da BRX Labs (nós), nunca a de uma pessoa.
 
 export const contact = {
-  // TODO: trocar pelo número real (formato internacional, só dígitos: 55 + DDD + número)
-  whatsapp: 'https://wa.me/5500000000000',
+  // WhatsApp da BRX: +55 47 8862-2961 (no link, só dígitos: 55 + DDD + número)
+  whatsapp: 'https://wa.me/554788622961',
   email: 'contato@brxlabs.com.br',
   cta: 'Fale com a gente',
 }

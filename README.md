@@ -78,11 +78,3 @@ src/
 ├── components/           hero, modais, HUD, intro, página final e componentes do React Bits
 └── flow/                 cena 3D: configuração, desenho, efeitos, scroll e modo apresentação
 ```
-
-## Pendências conhecidas
-
-- Trocar o número do WhatsApp em `src/content.ts` (ainda é `5500000000000`).
-- Revisar os textos, que ainda são provisórios.
-- Remover o teste temporário de cor (`?cor=laranja` em `src/main.tsx` e no topo de `src/index.css`) quando o roxo estiver confirmado.
-- Detalhar os projetos no modal "Projetos entregues".
-- Seletor de idioma.
