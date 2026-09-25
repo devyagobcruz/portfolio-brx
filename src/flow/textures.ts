@@ -154,6 +154,14 @@ function drawIcon(ctx: CanvasRenderingContext2D, icon: IconName, cx: number, cy:
       ctx.arc(0, 0, 0.4, 0, Math.PI * 2)
       ctx.moveTo(0.17, 0); ctx.ellipse(0, 0, 0.17, 0.4, 0, 0, Math.PI * 2)
       ctx.moveTo(-0.4, 0); ctx.lineTo(0.4, 0); ctx.stroke(); break
+    case 'hourglass':
+      // Ampulheta: barras em cima e embaixo, vidro em X e a areia no fundo
+      ctx.moveTo(-0.3, -0.42); ctx.lineTo(0.3, -0.42)
+      ctx.moveTo(-0.3, 0.42); ctx.lineTo(0.3, 0.42)
+      ctx.moveTo(-0.22, -0.42); ctx.bezierCurveTo(-0.22, -0.12, 0.2, -0.1, 0.2, 0.42)
+      ctx.moveTo(0.22, -0.42); ctx.bezierCurveTo(0.22, -0.12, -0.2, -0.1, -0.2, 0.42); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(-0.14, 0.4); ctx.quadraticCurveTo(0, 0.2, 0.14, 0.4); ctx.closePath(); ctx.fill()
+      break
     case 'flask':
       // Frasco de laboratório com líquido e bolhas (o "Labs" da BRX)
       ctx.moveTo(-0.11, -0.36); ctx.lineTo(-0.11, -0.08); ctx.lineTo(-0.38, 0.36)
@@ -252,6 +260,47 @@ export function brxTitleCounter(): Counter {
   // Sem a medição (fonte não carregou), usa um ponto aproximado dentro do R
   brxCounter = found ? { x: found.x / k, y: found.y / k, r: found.r / k } : { x: 200, y: 88, r: 6 }
   return brxCounter
+}
+
+/** Canvas do nó Wait, em px lógicos: o título fica acima do cartão, como no n8n */
+export const WAIT_CANVAS = { w: 400, h: 480, cardY: 104 }
+/** Altura (px) do centro do cartão do Wait, onde ficam as alças */
+export const WAIT_CARD_CY = WAIT_CANVAS.cardY + (WAIT_CANVAS.w - 48) / 2
+
+/** Nó Wait da transição final: título "Wait" em cima e o cartão quadrado com a ampulheta */
+export function waitNodeTexture(status: NodeStatus, th: Theme, anisotropy: number) {
+  const { w: W, h: H, cardY } = WAIT_CANVAS
+  const scale = 2
+  const c = document.createElement('canvas'); c.width = W * scale; c.height = H * scale
+  const ctx = c.getContext('2d')!
+  ctx.scale(scale, scale)
+  const borderColor = status === 'running' ? th.accent : status === 'done' ? th.done : th.border
+  const card = W - 48
+  // título acima do cartão
+  ctx.font = '700 58px "Play", Arial, sans-serif'
+  ctx.fillStyle = th.text; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'
+  ctx.fillText('Wait', W / 2, 74)
+  // alças de entrada e saída
+  ctx.fillStyle = th.surface; ctx.strokeStyle = borderColor; ctx.lineWidth = 5
+  for (const x of [24, W - 24]) { ctx.beginPath(); ctx.arc(x, WAIT_CARD_CY, 14, 0, Math.PI * 2); ctx.fill(); ctx.stroke() }
+  // cartão
+  roundRect(ctx, 24, cardY, card, card, 44)
+  ctx.fillStyle = th.surface; ctx.fill()
+  ctx.lineWidth = status === 'idle' ? 4 : 7; ctx.strokeStyle = borderColor; ctx.stroke()
+  // bloco do ícone
+  roundRect(ctx, W / 2 - 90, WAIT_CARD_CY - 90, 180, 180, 32)
+  ctx.fillStyle = th.tile; ctx.fill()
+  drawIcon(ctx, 'hourglass', W / 2, WAIT_CARD_CY, 120, status === 'idle' ? th.muted : borderColor)
+  // selo de concluído
+  if (status === 'done') {
+    ctx.fillStyle = th.done; ctx.beginPath(); ctx.arc(W - 54, cardY + 30, 21, 0, Math.PI * 2); ctx.fill()
+    ctx.strokeStyle = th.surface; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round'
+    ctx.beginPath(); ctx.moveTo(W - 64, cardY + 31); ctx.lineTo(W - 57, cardY + 38); ctx.lineTo(W - 44, cardY + 23); ctx.stroke()
+  }
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.anisotropy = anisotropy
+  return tex
 }
 
 /** Contorno branco do cartão BRX (mesma forma), usado nas ondas de conclusão; recebe a cor pelo material */

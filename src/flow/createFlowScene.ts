@@ -1,7 +1,7 @@
 import * as THREE from 'three'
-import { BACKGROUND_DESKTOP_LIFT, BACKGROUND_EDGES, BRX_NODE, BACKGROUND_NODES, BACKGROUND_Z, EDGES, N, NODES, STOPS, type NodeDef, type Vec3 } from './config'
+import { BACKGROUND_DESKTOP_LIFT, BACKGROUND_EDGES, BRX_NODE, WAIT_NODE, BACKGROUND_NODES, BACKGROUND_Z, EDGES, N, NODES, STOPS, type NodeDef, type Vec3 } from './config'
 import { createNodeEffects } from './effects'
-import { BRX_CANVAS, brxOutlineTexture, brxTitleCounter, NODE_CANVAS, SUB_CANVAS, brxNodeTexture, SUB_CIRCLE, nodeTexture, readTheme, softTexture, subNodeTexture, type NodeStatus } from './textures'
+import { BRX_CANVAS, WAIT_CANVAS, WAIT_CARD_CY, brxOutlineTexture, brxTitleCounter, waitNodeTexture, NODE_CANVAS, SUB_CANVAS, brxNodeTexture, SUB_CIRCLE, nodeTexture, readTheme, softTexture, subNodeTexture, type NodeStatus } from './textures'
 
 export interface FlowScene {
   /** Atualiza e desenha um quadro. `t` vai de 0 a N-1; `pointer` em -1..1. */
@@ -146,7 +146,7 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
     bgGroup.add(new THREE.Mesh(new THREE.TubeGeometry(edgeCurve(from, to), 60, 0.02, 5, false), ghostEdgeMat))
   })
 
-  /* Nó final BRX e a conexão em arco que leva até ele (percorrida na transição para a página final) */
+  /* Transição final: Enviar mensagem → Wait → BRX (percorrida antes da página final) */
   const BW = BRX_NODE.size
   const brxPos = new THREE.Vector3(...BRX_NODE.pos)
   const brxMat = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false })
@@ -155,19 +155,49 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
   scene.add(brxMesh)
   let brxTex: Partial<Record<NodeStatus, THREE.CanvasTexture>> = {}
   let brxStatus: NodeStatus = 'idle'
-  const finaleCurve = (() => {
+  // Nó Wait no meio do caminho
+  const WW = WAIT_NODE.size, WH = (WW * WAIT_CANVAS.h) / WAIT_CANVAS.w
+  const waitPos = new THREE.Vector3(...WAIT_NODE.pos)
+  const waitMat = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false })
+  const waitMesh = new THREE.Mesh(new THREE.PlaneGeometry(WW, WH), waitMat)
+  waitMesh.position.copy(waitPos); waitMesh.renderOrder = 2
+  scene.add(waitMesh)
+  let waitTex: Partial<Record<NodeStatus, THREE.CanvasTexture>> = {}
+  let waitStatus: NodeStatus = 'idle'
+  // Centro do cartão do Wait (a textura tem o título acima, então o cartão fica abaixo do centro do plano)
+  const waitCardY = waitPos.y - (WAIT_CARD_CY / WAIT_CANVAS.h - 0.5) * WH
+  const waitHandle = (WW * 24) / WAIT_CANVAS.w
+
+  // Conexões no estilo do n8n: saem e chegam na horizontal, com a curva no meio
+  const n8nCurve = (p0: THREE.Vector3, p3: THREE.Vector3) => {
+    const dx = Math.max(1, (p3.x - p0.x) * 0.5)
+    return new THREE.CubicBezierCurve3(p0, new THREE.Vector3(p0.x + dx, p0.y, p0.z), new THREE.Vector3(p3.x - dx, p3.y, p3.z), p3)
+  }
+  const finaleCurve = new THREE.CurvePath<THREE.Vector3>()
+  {
     const from = nodes.send.def.pos
-    const p0 = new THREE.Vector3(from[0] + HANDLE, from[1], from[2])
-    // chega na alça de entrada do cartão (24px da borda esquerda do canvas)
-    const p3 = new THREE.Vector3(brxPos.x - BW / 2 + (BW * 24) / BRX_CANVAS, brxPos.y, brxPos.z)
-    // Arco suave: sobe um pouco depois de "Enviar mensagem" e desce até o BRX
-    return new THREE.CubicBezierCurve3(p0, new THREE.Vector3(p0.x + 2.4, p0.y + 2.4, p0.z), new THREE.Vector3(p3.x - 2.6, p3.y + 1.6, p3.z), p3)
-  })()
-  scene.add(new THREE.Mesh(new THREE.TubeGeometry(finaleCurve, TUB, 0.022, RAD, false), baseEdgeMat))
-  const finaleProgGeo = new THREE.TubeGeometry(finaleCurve, TUB, 0.04, RAD, false)
-  const finaleProg = new THREE.Mesh(finaleProgGeo, new THREE.MeshBasicMaterial())
-  finaleProgGeo.setDrawRange(0, 0)
-  scene.add(finaleProg)
+    finaleCurve.add(n8nCurve(
+      new THREE.Vector3(from[0] + HANDLE, from[1], from[2]),
+      new THREE.Vector3(waitPos.x - WW / 2 + waitHandle, waitCardY, waitPos.z),
+    ))
+    finaleCurve.add(n8nCurve(
+      new THREE.Vector3(waitPos.x + WW / 2 - waitHandle, waitCardY, waitPos.z),
+      // alça de entrada do cartão BRX (24px da borda esquerda do canvas)
+      new THREE.Vector3(brxPos.x - BW / 2 + (BW * 24) / BRX_CANVAS, brxPos.y, brxPos.z),
+    ))
+  }
+  // Onde, ao longo do caminho (0..1), fica o Wait
+  const waitAt = (() => { const l = finaleCurve.getCurveLengths(); return l[0] / l[1] })()
+  const waitCenter = new THREE.Vector3(waitPos.x, waitCardY, waitPos.z)
+  // Um tubo por ligação (um tubo do caminho inteiro fecharia o vão e passaria por cima do Wait)
+  const finaleSegs = finaleCurve.curves.map(curve => {
+    scene.add(new THREE.Mesh(new THREE.TubeGeometry(curve, TUB, 0.022, RAD, false), baseEdgeMat))
+    const geo = new THREE.TubeGeometry(curve, TUB, 0.04, RAD, false)
+    const prog = new THREE.Mesh(geo, new THREE.MeshBasicMaterial())
+    geo.setDrawRange(0, 0)
+    scene.add(prog)
+    return { geo, prog }
+  })
   const finalePacket = new THREE.Group()
   finalePacket.add(new THREE.Mesh(packetGeo, packetMat))
   {
@@ -197,6 +227,10 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
     packetMat.color.copy(accentC); haloMat.color.copy(accentC); pulseMat.color.copy(doneC)
     Object.values(brxTex).forEach(t => t.dispose())
     brxTex = { idle: brxNodeTexture('idle', th, maxAniso), running: brxNodeTexture('running', th, maxAniso), done: brxNodeTexture('done', th, maxAniso) }
+    Object.values(waitTex).forEach(t => t.dispose())
+    waitTex = { idle: waitNodeTexture('idle', th, maxAniso), running: waitNodeTexture('running', th, maxAniso), done: waitNodeTexture('done', th, maxAniso) }
+    waitMat.map = waitTex[waitStatus]!
+    waitMat.needsUpdate = true
     brxMat.map = brxTex[brxStatus]!
     brxMat.needsUpdate = true
     allNodeObjs.forEach(o => {
@@ -301,8 +335,15 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
      2ª parte: a câmera mergulha numa faixa lisa do cartão BRX (a base, sem texto). No fim a tela fica
      toda na cor do cartão, e a página final assume com as letras nessa mesma cor. */
   // Partes da transição: viagem até o BRX, conclusão (selo + ondas verdes) e mergulho no R
-  const TRAVEL_SHARE = 0.5
-  const CONCLUDE_SHARE = 0.18
+  const TRAVEL_SHARE = 0.56
+  const CONCLUDE_SHARE = 0.16
+  // Dentro da viagem: trecho em que o pulso fica parado no Wait
+  const WAIT_FROM = 0.36, WAIT_TO = 0.56, ARRIVE = 0.88
+  /** Posição do pulso no caminho (0..1) para um ponto da viagem, com a pausa no Wait */
+  const pulseProgress = (tr: number) =>
+    tr < WAIT_FROM ? (tr / WAIT_FROM) * waitAt
+      : tr < WAIT_TO ? waitAt
+        : waitAt + clamp01((tr - WAIT_TO) / (ARRIVE - WAIT_TO)) * (1 - waitAt)
   let finale = 0
   // Mergulho no miolo de cima do R do título: no fim, a tela inteira fica dentro dele (na cor do cartão)
   const rCounter = brxTitleCounter()
@@ -328,9 +369,11 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
       // A câmera acompanha o pulso pelo arco: o ponto em movimento fica no centro da tela.
       // Entra no acompanhamento saindo da última parada e, quando o pulso chega, enquadra o nó BRX.
       const portraitMult = innerWidth < innerHeight ? 1.55 : 0.9
-      finaleCurve.getPoint(clamp01(travel / 0.85), pulseAt)
-      const settle = smoothstep((travel - 0.8) / 0.2)
-      followLook.copy(pulseAt).lerp(brxPos, settle)
+      finaleCurve.getPoint(pulseProgress(travel), pulseAt)
+      const settle = smoothstep((travel - 0.82) / 0.18)
+      // Durante a espera a câmera centraliza no cartão do Wait
+      const hold = smoothstep((travel - WAIT_FROM + 0.06) / 0.08) * (1 - smoothstep((travel - WAIT_TO + 0.02) / 0.08))
+      followLook.copy(pulseAt).lerp(waitCenter, hold).lerp(brxPos, settle)
       const dist = (7.2 + (6.2 - 7.2) * settle) * portraitMult
       followCam.set(followLook.x - 0.8, followLook.y - 0.5, followLook.z + dist)
       const enter = smoothstep(travel / 0.18)
@@ -383,14 +426,21 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
       o.mesh.scale.setScalar(o.scale)
     })
 
-    // Pulso no arco até o BRX; chega um pouco antes da câmera parar, e o BRX acende
-    const fp = clamp01(travel / 0.85)
-    finaleProgGeo.setDrawRange(0, Math.floor(fp * TUB) * RAD * 6)
-    finaleProg.material.color.copy(fp >= 1 ? doneC : accentC)
-    finalePacket.visible = fp > 0.001 && fp < 0.999
+    // Pulso: sobe até o Wait, espera, e segue até o BRX (que acende ao chegar)
+    const fp = pulseProgress(travel)
+    const waiting = travel >= WAIT_FROM && travel < WAIT_TO
+    const ws: NodeStatus = travel < WAIT_FROM ? 'idle' : waiting ? 'running' : 'done'
+    if (ws !== waitStatus) { waitStatus = ws; waitMat.map = waitTex[ws]! }
+    finaleSegs.forEach((seg, i) => {
+      const local = i === 0 ? clamp01(fp / waitAt) : clamp01((fp - waitAt) / (1 - waitAt))
+      seg.geo.setDrawRange(0, Math.floor(local * TUB) * RAD * 6)
+      seg.prog.material.color.copy(local >= 0.999 ? doneC : accentC)
+    })
+    // Enquanto espera, o pulso está "dentro" do Wait (escondido)
+    finalePacket.visible = fp > 0.001 && fp < 0.999 && !waiting
     if (finalePacket.visible) finaleCurve.getPoint(fp, finalePacket.position)
     // Conclusão: o BRX passa de "em execução" para concluído (verde, com selo) e solta duas ondas
-    const bs: NodeStatus = conclude >= 0.15 ? 'done' : fp >= 1 ? 'running' : 'idle'
+    const bs: NodeStatus = conclude >= 0.15 ? 'done' : fp >= 0.999 ? 'running' : 'idle'
     brxWaves.forEach((m, k) => {
       const local = clamp01((conclude - 0.15 - k * 0.22) / 0.6)
       m.scale.setScalar(1 + local * 0.55)
@@ -434,6 +484,8 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
     allNodeObjs.forEach(o => Object.values(o.tex).forEach(t => t.dispose()))
     ;[dotTex, radialTex, glowTex].forEach(t => t.dispose())
     brxOutlineTex.dispose()
+    Object.values(waitTex).forEach(t => t.dispose())
+    Object.values(brxTex).forEach(t => t.dispose())
     renderer.dispose()
   }
 

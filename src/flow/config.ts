@@ -5,8 +5,8 @@ export type IconName =
   // ícones do fluxo de fundo
   | 'webhook' | 'switch' | 'whatsapp' | 'sheets' | 'video' | 'edit' | 'aggregate'
   | 'agent' | 'brain' | 'database' | 'if' | 'filter' | 'globe'
-  // nó final BRX
-  | 'flask'
+  // nós da transição final
+  | 'flask' | 'hourglass'
 
 export interface NodeDef {
   id: string
@@ -55,10 +55,12 @@ export const STOPS: { look: Vec3; dist: number; portraitLook?: Vec3; portraitDis
   { look: [43, 0, 0], dist: 8 },
 ]
 
-/* ---------- Nó final BRX ----------
-   Fica depois de "Enviar mensagem", ligado por uma conexão em arco. Não é uma parada do HUD: é o
-   destino da transição para a página final (a câmera viaja até ele e mergulha no cartão). */
-export const BRX_NODE = { pos: [51, -1.8, 0] as Vec3, size: 2.5 }
+/* ---------- Transição final: Enviar mensagem → Wait → BRX ----------
+   Não são paradas do HUD: é o caminho da transição para a página final. O pulso sobe em degraus
+   (conexões no estilo do n8n, saindo e chegando na horizontal), espera um pouco no Wait e chega ao
+   BRX; a câmera acompanha e depois mergulha no R do título. */
+export const WAIT_NODE = { pos: [48.6, 1.5, 0] as Vec3, size: 1.7 }
+export const BRX_NODE = { pos: [54.4, 3, 0] as Vec3, size: 2.5 }
 
 /* ---------- Fluxo de fundo ----------
    Um segundo fluxo, decorativo, atrás do principal (mais longe da câmera e translúcido).

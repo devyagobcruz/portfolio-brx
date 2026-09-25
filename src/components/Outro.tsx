@@ -11,7 +11,7 @@ gsap.registerPlugin(ScrollTrigger)
   Página final. A seção só dá o comprimento da rolagem; o conteúdo fica fixo na tela e entra assim:
 
   0 ─────── FINALE_END ─────────────── ZOOM_END ────────── 1
-  (viagem, conclusão com selo e ondas verdes, e mergulho no R)
+  (viagem com pausa no Wait, conclusão do BRX com selo e ondas verdes, e mergulho no R)
   um pulso vai  │ "BRX LABS" faz zoom out a partir │ o chamado e o
   até o nó BRX, │ do centro, de dentro da letra    │ rodapé aparecem
   e a câmera    │ mais próxima do meio             │
@@ -21,8 +21,8 @@ gsap.registerPlugin(ScrollTrigger)
   do R de "BRX LABS": a tela ainda está na cor do cartão (um véu que vai sumindo), e o R se abre ao
   redor enquanto o fundo escurece, até a palavra inteira aparecer.
 */
-const FINALE_END = 0.52
-const ZOOM_END = 0.85
+const FINALE_END = 0.56
+const ZOOM_END = 0.87
 /** Folga na escala inicial: o traço do R começa um pouco além dos cantos da tela */
 const EDGE_MARGIN = 1.15
 
