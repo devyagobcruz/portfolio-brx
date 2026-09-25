@@ -1,0 +1,456 @@
+@import "tailwindcss";
+
+/* Tokens de cor: a cena 3D também lê estas variáveis (src/flow/textures.ts) */
+:root {
+  --canvas: #EEF0F4;
+  --dots: #C4CAD6;
+  --surface: #FFFFFF;
+  --tile: #F1F3F7;
+  --border: #CBD2DE;
+  --text: #1B2230;
+  --muted: #5B6577;
+  --accent: #6D4AFF;
+  --on-accent: #FFFFFF;
+  --done: #15805A;
+  --on-done: #FFFFFF;
+  --scrim: rgba(238, 240, 244, 0.86);
+  --font: "Play", "Helvetica Neue", Arial, sans-serif;
+  --display: "Zen Dots", "Play", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --canvas: #1B2231;
+    --dots: #36435C;
+    --surface: #252F43;
+    --tile: #2E3950;
+    --border: #3E4B65;
+    --text: #EDF0F5;
+    --muted: #97A3B8;
+    --accent: #A48BFF;
+    --on-accent: #170B3B;
+    --done: #5FDDAA;
+    --on-done: #0B2A1E;
+    --scrim: rgba(27, 34, 49, 0.82);
+  }
+}
+:root[data-theme="dark"] {
+  --canvas: #1B2231;
+  --dots: #36435C;
+  --surface: #252F43;
+  --tile: #2E3950;
+  --border: #3E4B65;
+  --text: #EDF0F5;
+  --muted: #97A3B8;
+  --accent: #A48BFF;
+  --on-accent: #170B3B;
+  --done: #5FDDAA;
+  --on-done: #0B2A1E;
+  --scrim: rgba(27, 34, 49, 0.82);
+}
+/* TEMPORÁRIO: laranja antigo para comparar, ativado com ?cor=laranja na URL (ver main.tsx) */
+:root[data-accent="laranja"] { --accent: #EE9A2C; --on-accent: #1E1405; }
+@media (prefers-color-scheme: dark) {
+  :root[data-accent="laranja"]:not([data-theme="light"]) { --accent: #FFB547; --on-accent: #231704; }
+}
+:root[data-theme="dark"][data-accent="laranja"] { --accent: #FFB547; --on-accent: #231704; }
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1.125rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+#scene {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+}
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+/* Topo */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 1.1rem) clamp(1.25rem, 5vw, 3.5rem) 1.1rem;
+  pointer-events: none;
+}
+.topbar > * { pointer-events: auto; }
+.logo { font-family: var(--display); font-weight: 400; font-size: 1.05rem; letter-spacing: 0.02em; text-decoration: none; }
+.logo span { color: var(--muted); }
+.toplink {
+  font-size: 0.95rem; font-weight: 700; text-decoration: none;
+  padding: 0.5rem 0.9rem; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface);
+}
+.toplink:hover { border-color: var(--accent); }
+
+/* Seções */
+/* As seções são só espaço de rolagem: os cliques passam para o canvas 3D (nós clicáveis) */
+main { position: relative; z-index: 1; pointer-events: none; }
+.step {
+  min-height: 150vh;
+  display: flex;
+  align-items: center;
+  padding: 6rem clamp(1.25rem, 7vw, 7rem);
+}
+.panel { max-width: 34rem; width: 100%; pointer-events: auto; }
+/* Centraliza o hero na primeira dobra sem passar por baixo do HUD em telas baixas */
+.step--hero { min-height: 130vh; align-items: flex-start; padding-top: max(7rem, calc(50vh - 17rem)); }
+.step--hero .panel { max-width: 40rem; }
+
+.node-ref {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-family: var(--mono); font-size: 0.8rem; color: var(--muted);
+  margin: 0 0 1.25rem;
+}
+.node-ref i {
+  width: 0.55rem; height: 0.55rem; border-radius: 50%;
+  background: var(--accent); display: inline-block;
+}
+
+/* Zen Dots só tem peso 400: sem negrito sintético */
+h1, h2 { margin: 0; font-family: var(--display); font-weight: 400; letter-spacing: -0.01em; }
+/* Cada .line do título cabe numa linha só no desktop */
+h1 { font-size: clamp(2.2rem, 3.8vw, 3.3rem); line-height: 1.12; }
+h1 .line { display: block; overflow: hidden; padding-bottom: 0.06em; }
+h1 .line > span { display: block; }
+h2 { font-size: clamp(1.6rem, 2.9vw, 2.5rem); line-height: 1.15; max-width: 18ch; }
+.lede { font-size: 1.2rem; color: var(--muted); max-width: 32rem; margin: 1.5rem 0 0; }
+p { margin: 1.1rem 0 0; }
+.panel > p { color: var(--muted); }
+
+.actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2rem; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  font: 700 1rem/1 var(--font); text-decoration: none;
+  padding: 0.95rem 1.3rem; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text);
+  transition: border-color .2s, transform .2s;
+}
+.btn:hover { border-color: var(--accent); }
+.btn--primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn--primary:hover { transform: translateY(-1px); }
+
+/* Saída de dados estilo n8n */
+.output {
+  margin-top: 1.75rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.output-head {
+  display: flex; justify-content: space-between;
+  padding: 0.6rem 1rem; border-bottom: 1px solid var(--border);
+  font-size: 0.85rem; color: var(--muted);
+}
+.output-head b { color: var(--done); font-weight: 700; }
+.output pre {
+  margin: 0; padding: 1rem; overflow-x: auto;
+  font: 400 0.88rem/1.7 var(--mono); color: var(--text);
+}
+.k { color: var(--muted); }
+.s { color: var(--done); }
+
+
+/* Projetos */
+.items-count { font-family: var(--mono); font-size: 0.85rem; color: var(--muted); margin-top: 0.75rem; }
+.projects { list-style: none; margin: 1.5rem 0 0; padding: 0; border-top: 1px solid var(--border); }
+.projects li { padding: 1.1rem 0; border-bottom: 1px solid var(--border); }
+.projects h3 { margin: 0; font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; }
+.projects p { margin-top: 0.25rem; font-size: 1rem; color: var(--muted); }
+.tags { display: flex; gap: 0.4rem; margin-top: 0.6rem; flex-wrap: wrap; }
+.tags span {
+  font-size: 0.8rem; padding: 0.2rem 0.55rem; border-radius: 6px;
+  background: var(--tile); color: var(--text);
+}
+
+.footer-note { margin-top: 3rem; font-size: 0.9rem; color: var(--muted); }
+
+/* HUD de execução */
+.hud {
+  position: fixed; left: 0; bottom: 0; z-index: 10;
+  padding: 0 clamp(1.25rem, 5vw, 3.5rem) calc(env(safe-area-inset-bottom, 0px) + 1.1rem);
+  pointer-events: none;
+}
+.hud-box {
+  display: flex; align-items: center; gap: 0.9rem;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 0.6rem 0.9rem; font-size: 0.85rem;
+}
+.hud-bars { display: flex; gap: 4px; }
+.hud-bars span { width: 14px; height: 6px; border-radius: 3px; background: var(--border); transition: background .3s; }
+.hud-bars span.on { background: var(--done); }
+.hud-bars span.run { background: var(--accent); }
+.hud-text { color: var(--muted); white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
+.hud-text b { color: var(--text); font-weight: 700; }
+.hud-stop {
+  font-family: var(--mono); font-size: 0.75rem; color: var(--accent);
+  padding-left: 0.9rem; border-left: 1px solid var(--border); white-space: nowrap;
+}
+
+/* HoldButton no lugar do botão principal do hero, com as medidas do .btn */
+.hold-button.btn-hold { height: 3.15rem; padding: 0 1.3rem; font-size: 1rem; font-weight: 700; letter-spacing: 0; }
+
+/* Layout empilhado: celular e tablet em pé. O mesmo critério está em createFlowScene (isStacked). */
+@media (max-width: 760px), (max-width: 1024px) and (orientation: portrait) {
+  body { font-size: 1.05rem; }
+  .step { padding-left: 1rem; padding-right: 1rem; }
+  /* Hero: painel logo abaixo do topo; o nó aparece entre o painel e o HUD */
+  .step--hero { align-items: flex-start; padding-top: calc(env(safe-area-inset-top, 0px) + 4.6rem); padding-bottom: 0; }
+  .step--hero .panel { max-width: 34rem; }
+  h1 { font-size: clamp(1.4rem, 6.4vw, 2.4rem); line-height: 1.15; }
+  .node-ref { margin-bottom: 0.9rem; }
+  .lede { font-size: 1rem; line-height: 1.5; margin-top: 1rem; }
+  .actions { margin-top: 1.4rem; }
+  /* O contato já está no topo; no celular o hero fica só com a ação principal */
+  .step--hero .actions .btn { display: none; }
+  .hold-button.btn-hold { width: 100%; }
+  .panel {
+    background: var(--scrim);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    padding: 1.25rem; border-radius: 16px;
+  }
+  .hud { padding-left: 1rem; padding-right: 1rem; }
+  .hud-text { max-width: 55vw; }
+  /* No celular o aviso de parar substitui o texto do HUD durante a execução automática */
+  .hud-box:has(.hud-stop) .hud-text { display: none; }
+  .hud-stop { padding-left: 0; border-left: 0; }
+  .topbar { padding-left: 1rem; padding-right: 1rem; }
+}
+/* Telas bem estreitas (320px): a frase mais longa do título pode quebrar, mas sem estourar */
+@media (max-width: 360px) {
+  .toplink { padding: 0.45rem 0.7rem; font-size: 0.85rem; }
+}
+/* Notebooks com pouca altura: o hero precisa caber acima do HUD */
+@media (min-width: 761px) and (max-height: 760px) and (orientation: landscape) {
+  .step--hero { padding-top: 6.5rem; }
+  h1 { font-size: clamp(2rem, 3.2vw, 2.8rem); }
+  .lede { font-size: 1.05rem; margin-top: 1.1rem; }
+  .actions { margin-top: 1.5rem; }
+}
+/* Botão que acompanha o nó atual (posição definida em useFlow) */
+.node-hint {
+  position: fixed; left: 0; top: 0; z-index: 5; margin-top: 0.7rem;
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  font: 700 0.9rem/1 var(--font); color: var(--on-accent);
+  background: var(--accent); border: 0; border-radius: 999px; padding: 0.65rem 1.05rem;
+  box-shadow: 0 10px 28px -10px color-mix(in srgb, var(--accent) 80%, transparent);
+  cursor: pointer; white-space: nowrap;
+  opacity: 0; visibility: hidden; transition: opacity .25s, visibility 0s .25s;
+}
+.node-hint[data-show="true"] { opacity: 1; visibility: visible; transition: opacity .25s; }
+.node-hint::before {
+  content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%;
+  background: var(--on-accent); animation: hint-pulse 1.4s ease-in-out infinite;
+}
+@keyframes hint-pulse { 50% { opacity: 0.25; } }
+
+/* Modal do nó (estilo painel de nó do n8n) */
+html.modal-open { overflow: hidden; }
+.node-modal {
+  /* margin: auto centraliza o dialog (o reset do Tailwind zera a margem) */
+  margin: auto; padding: 0; border: 1px solid var(--border); border-radius: 16px;
+  background: var(--surface); color: var(--text);
+  width: min(38rem, calc(100vw - 2rem)); max-height: min(86vh, 48rem);
+  box-shadow: 0 30px 80px -20px rgba(10, 14, 22, 0.45);
+  overflow: hidden;
+}
+.node-modal[open] { display: flex; flex-direction: column; animation: modal-in .35s cubic-bezier(.23, 1, .32, 1); }
+.node-modal::backdrop {
+  background: color-mix(in srgb, var(--canvas) 45%, transparent);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+}
+@keyframes modal-in { from { opacity: 0; transform: translateY(16px) scale(0.98); } }
+.modal-head {
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  padding: 0.75rem 0.75rem 0.75rem 1.4rem; border-bottom: 1px solid var(--border);
+}
+.modal-head .node-ref { margin: 0; }
+.modal-close {
+  display: grid; place-items: center; width: 2.25rem; height: 2.25rem; flex: none;
+  border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer;
+}
+.modal-close:hover { color: var(--text); border-color: var(--accent); }
+.modal-body { padding: 1.5rem 1.4rem 1.75rem; overflow-y: auto; overscroll-behavior: contain; }
+.modal-body h2 { font-size: clamp(1.35rem, 2.3vw, 1.8rem); max-width: 22ch; }
+.modal-body > p { color: var(--muted); }
+.modal-foot {
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+  padding: 0.75rem 0.75rem 0.75rem 1.4rem; border-top: 1px solid var(--border);
+}
+.modal-status { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.9rem; font-weight: 700; color: var(--done); }
+.btn--small { padding: 0.7rem 1rem; font-size: 0.9rem; }
+.modal-progress { height: 3px; background: var(--tile); flex: none; }
+.modal-progress span { display: block; height: 100%; background: var(--accent); transform-origin: left; animation: modal-progress linear forwards; }
+@keyframes modal-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Escolha de rota no Switch */
+.route-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1.5rem; }
+.route-option {
+  /* Coluna flexível: o link "Seguir por esta rota" fica sempre no rodapé do card */
+  display: flex; flex-direction: column; gap: 0.35rem; text-align: left;
+  font: inherit; color: inherit; background: var(--tile);
+  border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.05rem; cursor: pointer;
+  transition: border-color .2s, transform .2s;
+}
+.route-option:hover { border-color: var(--accent); transform: translateY(-2px); }
+.route-option[aria-pressed="true"] { border-color: var(--done); }
+.route-option small { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+.route-option strong { font-size: 1.1rem; }
+.route-option span { font-size: 0.95rem; color: var(--muted); line-height: 1.45; }
+.route-option em { font-style: normal; font-weight: 700; font-size: 0.9rem; color: var(--accent); margin-top: auto; padding-top: 0.6rem; }
+.checklist { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; gap: 0.55rem; }
+.checklist li { display: flex; gap: 0.65rem; }
+.checklist li::before { content: ""; flex: none; width: 0.5rem; height: 0.5rem; margin-top: 0.6em; border-radius: 50%; background: var(--done); }
+.checklist + .tags { margin-top: 1.25rem; }
+.link-btn {
+  display: inline-block; margin-top: 1.5rem; padding: 0; border: 0; background: none;
+  font: 700 0.95rem/1.4 var(--font); color: var(--accent); cursor: pointer; text-align: left;
+}
+.link-btn:hover { text-decoration: underline; }
+
+@media (max-width: 760px) {
+  /* No celular o modal vira uma folha que sobe da base da tela */
+  .node-modal {
+    width: 100%; max-width: 100%; max-height: 88vh; margin: auto 0 0;
+    border-radius: 16px 16px 0 0; border-bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .node-modal[open] { animation-name: sheet-in; }
+  .route-options { grid-template-columns: 1fr; }
+}
+@keyframes sheet-in { from { transform: translateY(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .node-modal[open] { animation: none; }
+  .node-hint::before { animation: none; }
+}
+
+.no-webgl #scene { display: none; }
+
+/* Intro: o raio desenha B, R, X e o logo; cobre o site enquanto a cena 3D carrega */
+html.intro-open { overflow: hidden; }
+.intro {
+  position: fixed; inset: 0; z-index: 100;
+  display: grid; place-items: center;
+  background: var(--canvas);
+  transition: opacity .65s ease, visibility 0s .65s;
+}
+.intro--leaving { opacity: 0; visibility: hidden; pointer-events: none; }
+.intro-logo { position: absolute; inset: 0; }
+.intro-skip {
+  position: absolute; right: 1.25rem; bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
+  font: 700 0.85rem/1 var(--font); color: var(--muted);
+  background: transparent; border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.6rem 1rem; cursor: pointer;
+}
+.intro-skip:hover { color: var(--text); border-color: var(--accent); }
+/* Texto do hero escondido enquanto a intro cobre o site (a animação de entrada o revela) */
+html.intro-cover .step--hero .panel > * { opacity: 0; }
+
+/* ---------- Página final: mergulho no último nó + "BRX LABS" em zoom out ----------
+   A seção .outro só dá o comprimento da rolagem. O conteúdo (.outro-pin) fica fixo na tela e só
+   aparece quando a câmera termina de mergulhar no cartão "Enviar mensagem" (ver Outro.tsx).
+   As letras começam na cor do cartão (--surface) e terminam em --outro-word. */
+:root {
+  --outro-bg: #0B0E15;
+  --outro-text: #EDF0F5;
+  --outro-muted: #97A3B8;
+  --outro-word: #EDF0F5;
+  --outro-glow: rgba(109, 74, 255, 0.28);
+  --outro-dots: rgba(151, 163, 184, 0.14);
+}
+
+.outro { position: relative; z-index: 2; height: 580vh; pointer-events: none; }
+.outro-pin {
+  position: fixed; inset: 0; z-index: 8;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(2rem, 6vh, 4rem);
+  padding: calc(env(safe-area-inset-top, 0px) + 6rem) clamp(1.25rem, 5vw, 3.5rem) calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+  color: var(--outro-text);
+  /* Brilho roxo em cima + grade de pontos do canvas do n8n, bem apagada */
+  background:
+    radial-gradient(60% 45% at 50% 0%, var(--outro-glow), transparent 70%),
+    radial-gradient(circle, var(--outro-dots) 1px, transparent 1.5px) 0 0 / 28px 28px,
+    var(--outro-bg);
+  visibility: hidden; pointer-events: none;
+}
+.outro-pin.is-visible { visibility: visible; pointer-events: auto; }
+.outro-word {
+  margin: 0; font-family: var(--display); font-weight: 400;
+  font-size: clamp(3rem, 12.5vw, 14rem); line-height: 1; letter-spacing: 0; white-space: nowrap;
+  color: var(--outro-word); text-align: center;
+}
+/* Com a animação, quem aparece é o SVG (mesma posição); o título fica só para leitura e layout */
+.outro:not(.outro--static) .outro-word { visibility: hidden; }
+.outro-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+/* Véu na cor do cartão BRX: a página final começa nessa cor (continuação do mergulho) e ele some no zoom */
+.outro-veil { position: absolute; inset: 0; background: var(--surface); pointer-events: none; }
+.outro--static .outro-veil { display: none; }
+.outro-body { display: grid; justify-items: center; gap: 2rem; width: 100%; text-align: center; }
+.outro-cta { max-width: 38rem; display: grid; justify-items: center; }
+.outro-label {
+  display: inline-flex; align-items: center; gap: 0.5rem; margin: 0 0 1rem;
+  font-family: var(--mono); font-size: 0.8rem; color: var(--outro-muted);
+}
+.outro-label i { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: #5FDDAA; display: inline-block; box-shadow: 0 0 12px #5FDDAA; }
+.outro-cta h3 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(1.4rem, 2.6vw, 2.2rem); line-height: 1.2; }
+.outro-cta p { color: var(--outro-muted); max-width: 32rem; }
+.outro .actions { justify-content: center; }
+.outro .btn { background: transparent; color: var(--outro-text); border-color: rgba(237, 240, 245, 0.25); }
+.outro .btn:hover { border-color: var(--outro-text); }
+.outro .btn--primary { background: #6D4AFF; color: #fff; border-color: #6D4AFF; box-shadow: 0 10px 30px -10px rgba(109, 74, 255, 0.8); }
+.outro .btn--primary:hover { border-color: #8B6DFF; background: #7B5CFF; }
+.outro-foot {
+  position: absolute; left: clamp(1.25rem, 5vw, 3.5rem); right: clamp(1.25rem, 5vw, 3.5rem);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
+  display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; justify-content: space-between;
+  padding-top: 1rem; border-top: 1px solid rgba(237, 240, 245, 0.1);
+  font-size: 0.8rem; color: var(--outro-muted); text-align: left;
+}
+.outro-foot a { text-decoration: none; }
+.outro-foot a:hover { color: var(--outro-text); }
+/* Sem animação (menos movimento): a página final aparece pronta, no fluxo normal */
+.outro--static { height: auto; pointer-events: auto; }
+.outro--static .outro-pin { position: relative; min-height: 100vh; visibility: visible; pointer-events: auto; }
+
+/* Durante a transição e a página final: some o HUD e a dica; o topo muda de cor quando o fundo escuro aparece */
+html.in-outro .hud, html.in-outro .node-hint { opacity: 0; visibility: hidden; }
+.hud { transition: opacity .3s, visibility 0s; }
+html.outro-revealed .topbar .logo, html.outro-revealed .topbar .logo span { color: var(--outro-text); }
+html.outro-revealed .toplink { background: transparent; color: var(--outro-text); border-color: rgba(237, 240, 245, 0.25); }
+.topbar .logo, .toplink { transition: color .3s, background-color .3s, border-color .3s; }
+
+@media (max-width: 760px) {
+  .outro-pin { justify-content: flex-start; padding-top: calc(env(safe-area-inset-top, 0px) + 7rem); gap: 2.5rem; }
+  .outro-foot { position: static; flex-direction: column; align-items: center; text-align: center; margin-top: auto; }
+  .outro-body { flex: 1; display: flex; flex-direction: column; align-items: center; }
+}
+
+/* Celular com tela baixa (iPhone SE e parecidos): painel do hero mais compacto, para o nó
+   "Visitante chegou" caber entre ele e o HUD sem ficar coberto */
+@media (max-width: 760px) and (max-height: 720px) {
+  .step--hero { padding-top: calc(env(safe-area-inset-top, 0px) + 4.2rem); }
+  .step--hero .panel { padding: 1rem 1.1rem; }
+  .step--hero .node-ref { margin-bottom: 0.6rem; font-size: 0.75rem; }
+  .step--hero h1 { font-size: clamp(1.3rem, 6vw, 1.6rem); }
+  .step--hero .lede { font-size: 0.92rem; line-height: 1.45; margin-top: 0.7rem; }
+  .step--hero .actions { margin-top: 1rem; }
+  .step--hero .hold-button.btn-hold { height: 2.8rem; }
+}
