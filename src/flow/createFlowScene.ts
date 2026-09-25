@@ -12,8 +12,13 @@ export interface FlowScene {
   setRoute(id: string | null): void
   /** Transição para a página final (0..1): viagem até o nó BRX e mergulho no cartão dele */
   setFinale(amount: number): void
+  /** Estado do nó Wait e ponto na tela (px) logo abaixo do cartão, para o selo de status */
+  waitStatus(): WaitStatus
   dispose(): void
 }
+
+export type WaitPhase = 'idle' | 'working' | 'done'
+export interface WaitStatus { phase: WaitPhase; visible: boolean; x: number; y: number }
 
 export interface FlowSceneOptions {
   reduced: boolean
@@ -163,7 +168,7 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
   waitMesh.position.copy(waitPos); waitMesh.renderOrder = 2
   scene.add(waitMesh)
   let waitTex: Partial<Record<NodeStatus, THREE.CanvasTexture>> = {}
-  let waitStatus: NodeStatus = 'idle'
+  let waitTexStatus: NodeStatus = 'idle'
   // Centro do cartão do Wait (a textura tem o título acima, então o cartão fica abaixo do centro do plano)
   const waitCardY = waitPos.y - (WAIT_CARD_CY / WAIT_CANVAS.h - 0.5) * WH
   const waitHandle = (WW * 24) / WAIT_CANVAS.w
@@ -189,6 +194,9 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
   // Onde, ao longo do caminho (0..1), fica o Wait
   const waitAt = (() => { const l = finaleCurve.getCurveLengths(); return l[0] / l[1] })()
   const waitCenter = new THREE.Vector3(waitPos.x, waitCardY, waitPos.z)
+  // Base do cartão do Wait (o selo de status fica logo abaixo)
+  const waitCardBottom = new THREE.Vector3(waitPos.x, waitCardY - (((WAIT_CANVAS.w - 48) / WAIT_CANVAS.w) * WW) / 2 - 0.08, waitPos.z)
+  const waitChip: WaitStatus = { phase: 'idle', visible: false, x: 0, y: 0 }
   // Um tubo por ligação (um tubo do caminho inteiro fecharia o vão e passaria por cima do Wait)
   const finaleSegs = finaleCurve.curves.map(curve => {
     scene.add(new THREE.Mesh(new THREE.TubeGeometry(curve, TUB, 0.022, RAD, false), baseEdgeMat))
@@ -229,7 +237,7 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
     brxTex = { idle: brxNodeTexture('idle', th, maxAniso), running: brxNodeTexture('running', th, maxAniso), done: brxNodeTexture('done', th, maxAniso) }
     Object.values(waitTex).forEach(t => t.dispose())
     waitTex = { idle: waitNodeTexture('idle', th, maxAniso), running: waitNodeTexture('running', th, maxAniso), done: waitNodeTexture('done', th, maxAniso) }
-    waitMat.map = waitTex[waitStatus]!
+    waitMat.map = waitTex[waitTexStatus]!
     waitMat.needsUpdate = true
     brxMat.map = brxTex[brxStatus]!
     brxMat.needsUpdate = true
@@ -430,7 +438,10 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
     const fp = pulseProgress(travel)
     const waiting = travel >= WAIT_FROM && travel < WAIT_TO
     const ws: NodeStatus = travel < WAIT_FROM ? 'idle' : waiting ? 'running' : 'done'
-    if (ws !== waitStatus) { waitStatus = ws; waitMat.map = waitTex[ws]! }
+    if (ws !== waitTexStatus) { waitTexStatus = ws; waitMat.map = waitTex[ws]! }
+    // Selo de status embaixo do Wait: aparece com o pulso chegando e some quando a câmera enquadra o BRX
+    waitChip.phase = travel < WAIT_FROM ? 'idle' : waiting ? 'working' : 'done'
+    waitChip.visible = travel >= WAIT_FROM && travel < 0.78 && dive === 0
     finaleSegs.forEach((seg, i) => {
       const local = i === 0 ? clamp01(fp / waitAt) : clamp01((fp - waitAt) / (1 - waitAt))
       seg.geo.setDrawRange(0, Math.floor(local * TUB) * RAD * 6)
@@ -462,6 +473,12 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
 
   function setRoute(id: string | null) { route = id }
   function setFinale(amount: number) { finale = clamp01(amount) }
+  function waitStatus(): WaitStatus {
+    vProj.copy(waitCardBottom).project(camera)
+    waitChip.x = ((vProj.x + 1) / 2) * innerWidth
+    waitChip.y = ((1 - vProj.y) / 2) * innerHeight
+    return waitChip
+  }
 
   function dispose() {
     effects?.dispose()
@@ -489,5 +506,5 @@ export function createFlowScene(canvas: HTMLCanvasElement, { reduced, clickable,
     renderer.dispose()
   }
 
-  return { update, project, setRoute, setFinale, dispose }
+  return { update, project, setRoute, setFinale, waitStatus, dispose }
 }

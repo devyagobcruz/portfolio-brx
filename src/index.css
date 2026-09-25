@@ -454,3 +454,16 @@ html.outro-revealed .toplink { background: transparent; color: var(--outro-text)
   .step--hero .actions { margin-top: 1rem; }
   .step--hero .hold-button.btn-hold { height: 2.8rem; }
 }
+
+/* Selo de status do nó Wait (posição definida em useFlow, como a dica de clique) */
+.wait-chip {
+  position: fixed; left: 0; top: 0; z-index: 5; margin-top: 0.6rem;
+  display: inline-flex; align-items: center;
+  padding: 0.55rem 0.9rem; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font); white-space: nowrap; pointer-events: none;
+  box-shadow: 0 10px 28px -14px rgba(0, 0, 0, 0.5);
+  opacity: 0; visibility: hidden; transition: opacity .25s, visibility 0s .25s;
+}
+.wait-chip[data-show="true"] { opacity: 1; visibility: visible; transition: opacity .25s; }
+.wait-chip .lattice-loader__timer { font-family: var(--mono); }

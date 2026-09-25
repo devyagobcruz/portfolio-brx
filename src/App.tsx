@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Hero } from './components/Sections'
 import { Hud } from './components/Hud'
+import LatticeLoader from './components/LatticeLoader'
 import { Intro } from './components/Intro'
 import { shouldPlayIntro } from './components/introFrames'
 import { NodeModal } from './components/NodeModal'
@@ -19,6 +20,7 @@ export default function App() {
   const mainRef = useRef<HTMLElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const hintRef = useRef<HTMLButtonElement>(null)
+  const waitChipRef = useRef<HTMLDivElement>(null)
   const [modal, setModal] = useState<ModalId | null>(null)
   const [route, setRoute] = useState<RouteId | null>(null)
   const [playIntro] = useState(shouldPlayIntro)
@@ -37,7 +39,7 @@ export default function App() {
   const closeModal = useCallback(() => setModal(null), [])
   const openContact = useCallback(() => openNode('send'), [openNode])
 
-  const { hud, ready, setRoute: setSceneRoute, setFinale } = useFlow(mainRef, canvasRef, { onNodeClick: openNode, hintRef, revealHero: heroRevealed })
+  const { hud, ready, waitPhase, setRoute: setSceneRoute, setFinale } = useFlow(mainRef, canvasRef, { onNodeClick: openNode, hintRef, waitChipRef, revealHero: heroRevealed })
   useEffect(() => setSceneRoute(route), [route, setSceneRoute])
   const autoRun = useAutoRun({ open: openNode, close: closeModal })
 
@@ -64,6 +66,26 @@ export default function App() {
       >
         {hintLabel}
       </button>
+      {/* Status do nó Wait na transição final (LatticeLoader do React Bits) */}
+      <div ref={waitChipRef} className="wait-chip" aria-hidden={waitPhase === 'idle'}>
+        {waitPhase !== 'idle' && (
+          <LatticeLoader
+            status={waitPhase === 'done' ? 'done' : 'working'}
+            label="Aguardando"
+            doneLabel="Concluído em"
+            errorLabel="Falhou após"
+            pattern="orbit"
+            grid={3}
+            shape="round"
+            color="var(--accent)"
+            doneColor="var(--done)"
+            cellSize={6}
+            gap={2}
+            fontSize={14}
+            step={90}
+          />
+        )}
+      </div>
       <NodeModal id={modal} presenting={autoRun.running} route={route} onOpen={openNode} onClose={closeModal} />
       <Hud state={hud} autoRunning={autoRun.running} />
       {!introDone && <Intro ready={ready} onReveal={revealHero} onDone={finishIntro} />}

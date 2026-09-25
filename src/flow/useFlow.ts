@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObje
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { MODAL_NODES, N, SECTION_NODES } from './config'
-import type { FlowScene } from './createFlowScene'
+import type { FlowScene, WaitPhase } from './createFlowScene'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -17,6 +17,8 @@ interface FlowOptions {
   onNodeClick(id: string): void
   /** Botão "clique para abrir" que acompanha o nó da seção atual */
   hintRef: RefObject<HTMLElement | null>
+  /** Selo de status que acompanha o nó Wait na transição final */
+  waitChipRef: RefObject<HTMLElement | null>
   /** O hero pode aparecer (a intro começou a sair ou não existe): dispara a animação de entrada */
   revealHero: boolean
 }
@@ -38,8 +40,10 @@ async function fontsReady() {
  * Liga o scroll da página ao fluxo: anima o painel do hero, move a câmera pela cena 3D,
  * posiciona a dica de clique embaixo do nó atual e devolve o estado do HUD.
  */
-export function useFlow(mainRef: RefObject<HTMLElement | null>, canvasRef: RefObject<HTMLCanvasElement | null>, { onNodeClick, hintRef, revealHero }: FlowOptions) {
+export function useFlow(mainRef: RefObject<HTMLElement | null>, canvasRef: RefObject<HTMLCanvasElement | null>, { onNodeClick, hintRef, waitChipRef, revealHero }: FlowOptions) {
   const [hud, setHud] = useState<HudState | null>(null)
+  /** Estado do nó Wait (para o selo de status) */
+  const [waitPhase, setWaitPhase] = useState<WaitPhase>('idle')
   /** A cena 3D terminou de carregar (ou falhou e caiu no fallback sem WebGL) */
   const [ready, setReady] = useState(false)
   const hudKey = useRef('')
@@ -110,6 +114,7 @@ export function useFlow(mainRef: RefObject<HTMLElement | null>, canvasRef: RefOb
 
     /* ---------- Loop no ticker do GSAP ---------- */
     let hintShown = false
+    let chipShown = false, lastPhase: WaitPhase = 'idle'
     const tick = (time: number, deltaMs: number) => {
       const dt = Math.min(deltaMs / 1000, 0.05)
       const target = dwell(state.raw)
@@ -144,11 +149,22 @@ export function useFlow(mainRef: RefObject<HTMLElement | null>, canvasRef: RefOb
         if (show !== hintShown) { hintShown = show; hint.dataset.show = String(show) }
       }
     }
+    // O selo do Wait roda no mesmo ticker, logo depois da cena
+    const chipTick = () => {
+      const chip = waitChipRef.current, flow = flowRef.current
+      if (!chip || !flow) return
+      const w = flow.waitStatus()
+      if (w.visible) chip.style.transform = `translate(${w.x.toFixed(1)}px, ${w.y.toFixed(1)}px) translateX(-50%)`
+      if (w.visible !== chipShown) { chipShown = w.visible; chip.dataset.show = String(w.visible) }
+      if (w.phase !== lastPhase) { lastPhase = w.phase; setWaitPhase(w.phase) }
+    }
     gsap.ticker.add(tick)
+    gsap.ticker.add(chipTick)
 
     return () => {
       cancelled = true
       gsap.ticker.remove(tick)
+      gsap.ticker.remove(chipTick)
       removeEventListener('pointermove', onPointer)
       ScrollTrigger.removeEventListener('refreshInit', measure)
       ctx.revert()
@@ -156,7 +172,7 @@ export function useFlow(mainRef: RefObject<HTMLElement | null>, canvasRef: RefOb
       flowRef.current = null
       hudKey.current = ''
     }
-  }, [mainRef, canvasRef, hintRef])
+  }, [mainRef, canvasRef, hintRef, waitChipRef])
 
   /* ---------- Entrada do hero, no mesmo quadro em que a intro começa a sair ----------
      useLayoutEffect: o estado inicial da animação (texto escondido) é aplicado antes da tela ser pintada,
@@ -178,5 +194,5 @@ export function useFlow(mainRef: RefObject<HTMLElement | null>, canvasRef: RefOb
 
   const setFinale = useCallback((amount: number) => { flowRef.current?.setFinale(amount) }, [])
 
-  return { hud, ready, setRoute, setFinale }
+  return { hud, ready, waitPhase, setRoute, setFinale }
 }
