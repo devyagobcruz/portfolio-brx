@@ -12,6 +12,8 @@
     <meta name="theme-color" content="#EEF0F4" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#1B2231" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Aplica o tema salvo (claro/escuro) antes da primeira pintura; ver src/theme.ts -->
+    <script>try { var t = localStorage.getItem('brx-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t } catch (e) {}</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Zen+Dots&family=Play:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />

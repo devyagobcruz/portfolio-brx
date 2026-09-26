@@ -25,7 +25,11 @@ export function NodeModal({ id, presenting, route, onOpen, onClose }: NodeModalP
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
-    if (id && !dialog.open) dialog.showModal()
+    if (id && !dialog.open) {
+      dialog.showModal()
+      // O navegador foca o primeiro botão (o X) e ele parecia sempre selecionado
+      dialog.focus()
+    }
     if (!id && dialog.open) dialog.close()
     document.documentElement.classList.toggle('modal-open', !!id)
     bodyRef.current?.scrollTo(0, 0)
@@ -37,6 +41,7 @@ export function NodeModal({ id, presenting, route, onOpen, onClose }: NodeModalP
     <dialog
       ref={dialogRef}
       className="node-modal"
+      tabIndex={-1}
       aria-labelledby="node-modal-title"
       onClose={onClose}
       // Clique no fundo escurecido fecha

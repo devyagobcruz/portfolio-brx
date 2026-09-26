@@ -114,7 +114,6 @@ export const outro = {
   text: 'Conte o que toma tempo da sua equipe. Respondemos com uma ideia de como automatizar, sem compromisso.',
   whatsappLabel: 'Chamar no WhatsApp',
   emailLabel: 'Enviar e-mail',
-  place: 'Rio Grande/RS · atendimento remoto em todo o Brasil',
   copyright: `© ${new Date().getFullYear()} BRX Labs. Todos os direitos reservados.`,
   backToTop: 'Voltar ao início',
 }

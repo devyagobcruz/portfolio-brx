@@ -35,7 +35,14 @@ export interface NodeEffects {
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x))
 /** Pílulas que sobem do nó "Editar campos" */
-const FIELD_LABELS = ['"empresa"', '"automação"', '"base"', '"programação"', '"foco"', '"desenvolvimento web"', '"atendimento"', '"ia"', '"ui/ux"']
+const FIELD_LABELS = [
+  '"empresa"', '"automação"', '"banco de dados"', '"programação"', '"foco"', '"desenvolvimento web"',
+  '"atendimento"', '"ia"', '"ui/ux"', '"produto"', '"sistemas"', '"ecossistemas"',
+  '"comunicação"', '"comunidade"', '"estudo"', '"dedicação"',
+]
+/** Pílulas: segundos de subida de cada uma e intervalo entre uma e a próxima */
+const FIELD_RISE = 4.5
+const FIELD_GAP = 0.5
 /** Ordem das colunas em que os símbolos do nó Código aparecem */
 const GLYPH_SLOTS = [2, 5, 0, 3, 1, 4]
 /** Sobe de 0 a 1 entre a e b */
@@ -178,7 +185,9 @@ export function createNodeEffects({ scene, pos, curve, card }: EffectsInput): No
     const w1 = w(1)
     fields.forEach((s, k) => {
       // Três colunas sobre o cartão; pílulas seguidas caem em colunas diferentes e não se sobrepõem
-      const phase = (time / 4.5 + k / fields.length) % 1
+      // Uma nova pílula a cada FIELD_GAP; com muitas palavras, cada uma espera a sua vez escondida
+      const phase = ((time + k * FIELD_GAP) % (fields.length * FIELD_GAP)) / FIELD_RISE
+      if (phase > 1) { show(s, 0); return }
       const col = k % 3
       const x = fieldsAt[0] + (col - 1) * card.w * 0.35 + Math.sin(time * 1.1 + k) * 0.05
       s.position.set(x, fieldsAt[1] + card.h / 2 + 0.15 + phase * 1.5, fieldsAt[2] + 0.1)

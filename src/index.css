@@ -100,6 +100,16 @@ a { color: inherit; }
   background: var(--surface);
 }
 .toplink:hover { border-color: var(--accent); }
+.topbar-actions { display: flex; align-items: center; gap: 0.5rem; }
+.theme-toggle {
+  display: grid; place-items: center; width: 2.4rem; height: 2.4rem; padding: 0;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); cursor: pointer;
+  transition: color .3s, background-color .3s, border-color .3s;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+.theme-toggle svg { width: 1.1rem; height: 1.1rem; }
+html.outro-revealed .theme-toggle { background: transparent; color: var(--outro-text); border-color: rgba(237, 240, 245, 0.25); }
+.node-modal:focus, .node-modal:focus-visible { outline: none; }
 
 /* Seções */
 /* As seções são só espaço de rolagem: os cliques passam para o canvas 3D (nós clicáveis) */
@@ -241,6 +251,7 @@ p { margin: 1.1rem 0 0; }
 /* Telas bem estreitas (320px): a frase mais longa do título pode quebrar, mas sem estourar */
 @media (max-width: 360px) {
   .toplink { padding: 0.45rem 0.7rem; font-size: 0.85rem; }
+  .theme-toggle { width: 2.15rem; height: 2.15rem; }
 }
 /* Notebooks com pouca altura: o hero precisa caber acima do HUD */
 @media (min-width: 761px) and (max-height: 760px) and (orientation: landscape) {

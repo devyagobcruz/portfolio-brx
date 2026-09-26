@@ -161,7 +161,6 @@ export function Outro({ onFinale }: { onFinale(amount: number): void }) {
         </div>
         <footer className="outro-foot" ref={footRef}>
           <span>{outro.copyright}</span>
-          <span>{outro.place}</span>
           <a href={`mailto:${contact.email}`}>{contact.email}</a>
           <a href="#inicio">{outro.backToTop} ↑</a>
         </footer>

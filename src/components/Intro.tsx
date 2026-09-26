@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import ElectricLogo from './ElectricLogo'
 import { buildIntroFrames } from './introFrames'
+import { currentTheme } from '../theme'
 
 /** Quando cada quadro entra (ms depois dos quadros ficarem prontos): B, R, X, BRX LABS */
 const FRAME_AT = [0, 1100, 2100, 3100]
@@ -35,7 +36,7 @@ export function Intro({ ready, onReveal, onDone }: IntroProps) {
   const [sequenceDone, setSequenceDone] = useState(false)
   const [skipped, setSkipped] = useState(false)
   const leaving = skipped || (sequenceDone && ready)
-  const [dark] = useState(() => matchMedia('(prefers-color-scheme: dark)').matches)
+  const [dark] = useState(() => currentTheme() === 'dark')
   // A área da animação é a tela inteira (o brilho não é cortado); o tamanho vem das constantes do topo
   const [scale] = useState(() => Math.min(PHONE_SIZE, DESKTOP_MAX_WIDTH / innerWidth))
   // Celular: GPU e CPU mais fracas. Canvas em resolução menor, contorno mais leve e um filamento a menos
