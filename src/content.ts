@@ -2,9 +2,10 @@
 // A voz é sempre a da BRX Labs (nós), nunca a de uma pessoa.
 
 export const contact = {
-  // WhatsApp da BRX: +55 47 8862-2961 (no link, só dígitos: 55 + DDD + número)
-  whatsapp: 'https://wa.me/554788622961',
-  email: 'contato@brxlabs.com.br',
+  // WhatsApp da BRX: +55 53 99929-0598 (no link, só dígitos: 55 + DDD + número)
+  whatsapp: 'https://wa.me/5553999290598',
+  // Provisório até o contato@brxlabs.com.br funcionar
+  email: 'devyagobcruz@gmail.com',
   cta: 'Fale com a gente',
 }
 
