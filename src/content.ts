@@ -80,12 +80,12 @@ export const projectsNode = {
   title: 'Projetos entregues & parcerias formadas.',
 }
 
+/** Cada projeto vira um brasão clicável (desenho em components/ProjectBadge.tsx) */
 export const projects = [
-  { title: 'Triagem de e-mails com IA', text: 'Classificação automática de e-mails para um escritório de contabilidade.', tags: ['Automação', 'IA'] },
-  { title: 'Comunidade Daniel Burlini', text: 'Site e comunidade para um editor de vídeo.', tags: ['Web', 'Comunidade'] },
-  { title: 'Psicóloga Debora', text: 'Landing page para uma psicóloga.', tags: ['Web', 'Landing page'] },
-  { title: 'Setor de automações da HBS', text: 'Desenvolvemos todo o ecossistema de fluxos de automação da High Business School, escola da Victória Ferrari.', tags: ['Automação', 'Parceria'] },
-]
+  { badge: 'daniel', name: 'Daniel Burlini', role: 'Criador de conteúdo / Editor de vídeos', url: 'https://www.danielburlini.com.br/' },
+  { badge: 'debora', name: 'Débora Böhm', role: 'Psicóloga', url: 'https://www.psideborabohm.com.br/' },
+  { badge: 'hbs', name: 'High Business School', role: 'Escola de negócios', url: 'https://highbusinessschool.com/' },
+] as const
 
 export const stackNode = {
   title: 'As ferramentas por trás.',

@@ -5,6 +5,7 @@ import {
 import { NODES, type ModalId } from '../flow/config'
 import { READ } from '../flow/useAutoRun'
 import { CodeOutput, JsonOutput } from './Output'
+import { ProjectBadge } from './ProjectBadge'
 
 interface NodeModalProps {
   id: ModalId | null
@@ -122,12 +123,14 @@ function ModalContent({ id, route, onOpen }: { id: ModalId; route: RouteId | nul
         <>
           <h2 id="node-modal-title">{projectsNode.title}</h2>
           <p className="items-count">{projects.length} itens combinados</p>
-          <ul className="projects">
+          <ul className="badges">
             {projects.map(p => (
-              <li key={p.title}>
-                <h3>{p.title}</h3>
-                <p>{p.text}</p>
-                <div className="tags">{p.tags.map(t => <span key={t}>{t}</span>)}</div>
+              <li key={p.name}>
+                <a className="badge" href={p.url} target="_blank" rel="noopener noreferrer">
+                  <ProjectBadge id={p.badge} />
+                  <strong>{p.name}</strong>
+                  <span>{p.role}</span>
+                </a>
               </li>
             ))}
           </ul>
