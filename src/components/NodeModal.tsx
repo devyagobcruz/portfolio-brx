@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import {
-  about, contact, contactNode, projects, projectsNode, routes, stack, stackNode, switchNode, type RouteId,
+  about, contact, contactNode, projects, projectsNode, routes, stack, stackNode, switchNode, workLabels, type RouteId,
 } from '../content'
 import { NODES, type ModalId } from '../flow/config'
 import { READ } from '../flow/useAutoRun'
@@ -126,10 +126,14 @@ function ModalContent({ id, route, onOpen }: { id: ModalId; route: RouteId | nul
           <ul className="badges">
             {projects.map(p => (
               <li key={p.name}>
-                <a className="badge" href={p.url} target="_blank" rel="noopener noreferrer">
+                <a className="badge" href={p.url} target="_blank" rel="noopener noreferrer" title={'linkTitle' in p ? p.linkTitle : undefined}>
+                  <span className="ribbons">
+                    {p.work.map(w => <span key={w} className={`ribbon ribbon--${w}`}>{workLabels[w]}</span>)}
+                  </span>
                   <ProjectBadge id={p.badge} />
                   <strong>{p.name}</strong>
-                  <span>{p.role}</span>
+                  <span className="badge-role">{p.role}</span>
+                  {'note' in p && <span className="badge-note">{p.note}</span>}
                 </a>
               </li>
             ))}

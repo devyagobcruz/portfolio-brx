@@ -80,12 +80,23 @@ export const projectsNode = {
   title: 'Projetos entregues & parcerias formadas.',
 }
 
-/** Cada projeto vira um brasão clicável (desenho em components/ProjectBadge.tsx) */
+/**
+ * Cada projeto vira um brasão clicável (imagens em components/ProjectBadge.tsx).
+ * `work`: fitas penduradas no card com o que a BRX fez ali.
+ * `note`: linha extra embaixo do card, para deixar claro o escopo quando o link não é trabalho nosso.
+ */
 export const projects = [
-  { badge: 'daniel', name: 'Daniel Burlini', role: 'Criador de conteúdo / Editor de vídeos', url: 'https://www.danielburlini.com.br/' },
-  { badge: 'debora', name: 'Débora Böhm', role: 'Psicóloga', url: 'https://www.psideborabohm.com.br/' },
-  { badge: 'hbs', name: 'High Business School', role: 'Escola de negócios', url: 'https://highbusinessschool.com/' },
+  { badge: 'daniel', name: 'Daniel Burlini', role: 'Criador de conteúdo / Editor de vídeos', url: 'https://www.danielburlini.com.br/', work: ['site', 'automacao', 'parceria'] },
+  { badge: 'debora', name: 'Débora Böhm', role: 'Psicóloga', url: 'https://www.psideborabohm.com.br/', work: ['site'] },
+  {
+    badge: 'hbs', name: 'High Business School', role: 'Escola de negócios', url: 'https://highbusinessschool.com/', work: ['automacao', 'parceria'],
+    note: 'Fizemos as automações, não o site',
+    linkTitle: 'Site da High Business School (o site não foi feito pela BRX; criamos o ecossistema de automações da escola)',
+  },
 ] as const
+
+/** Nome de cada tipo de trabalho nas fitas dos brasões */
+export const workLabels = { site: 'Site', automacao: 'Automação', parceria: 'Parceria' } as const
 
 export const stackNode = {
   title: 'As ferramentas por trás.',
