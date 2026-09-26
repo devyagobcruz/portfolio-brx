@@ -41,7 +41,7 @@ export function NodeModal({ id, presenting, route, onOpen, onClose }: NodeModalP
   return (
     <dialog
       ref={dialogRef}
-      className="node-modal"
+      className={`node-modal${id === 'merge' ? ' node-modal--wide' : ''}`}
       tabIndex={-1}
       aria-labelledby="node-modal-title"
       onClose={onClose}
@@ -133,7 +133,12 @@ function ModalContent({ id, route, onOpen }: { id: ModalId; route: RouteId | nul
                   <ProjectBadge id={p.badge} />
                   <strong>{p.name}</strong>
                   <span className="badge-role">{p.role}</span>
-                  {'note' in p && <span className="badge-note">{p.note}</span>}
+                  {'note' in p && (
+                    <span className="badge-note">
+                      {/* Uma linha para cada parte separada por " / " */}
+                      {p.note.split(' / ').map((part, i) => <span key={i}>{part}</span>)}
+                    </span>
+                  )}
                 </a>
               </li>
             ))}

@@ -198,6 +198,7 @@ p { margin: 1.1rem 0 0; }
 .badge:hover .badge-img { transform: scale(1.04); }
 .badge strong { font-size: 0.95rem; line-height: 1.2; }
 .badge-role { font-size: 0.8rem; line-height: 1.3; color: var(--muted); }
+.badge-note > span { display: block; }
 .badge-note { font-size: 0.72rem; line-height: 1.3; color: var(--text); margin-top: 0.3rem; padding: 0.2rem 0.45rem; border-radius: 6px; background: color-mix(in srgb, var(--done) 16%, transparent); }
 /* Fitas penduradas no topo do card: o que a BRX fez em cada projeto */
 .ribbons { position: absolute; top: -1px; left: 0.55rem; z-index: 1; display: flex; gap: 0.25rem; pointer-events: none; }
@@ -221,6 +222,21 @@ p { margin: 1.1rem 0 0; }
   .ribbons { left: 0.35rem; gap: 0.18rem; }
   .ribbon { width: 1.05rem; height: 4.3rem; font-size: 0.52rem; }
   .badge-img { height: 6.75rem; }
+}
+/* Desktop e tablet: o modal de projetos fica maior, para os brasões serem lidos de perto.
+   A altura dos brasões acompanha a altura da tela, para o modal continuar cabendo sem rolar. */
+@media (min-width: 761px) {
+  .node-modal.node-modal--wide { width: min(58rem, calc(100vw - 4rem)); }
+  .node-modal--wide .modal-body { padding: 1.5rem 1.75rem 1.6rem; }
+  .node-modal--wide .modal-body h2 { font-size: clamp(1.5rem, 2.4vw, 2rem); max-width: none; }
+  .node-modal--wide .badges { gap: 1rem; margin-top: 1.4rem; }
+  .node-modal--wide .badge { padding: 1.2rem 0.9rem 1.3rem; border-radius: 16px; }
+  .node-modal--wide .badge-img { height: clamp(7.5rem, calc(100vh - 29rem), 14rem); margin-bottom: 0.8rem; }
+  .node-modal--wide .badge strong { font-size: 1.15rem; }
+  .node-modal--wide .badge-role { font-size: 0.95rem; }
+  .node-modal--wide .badge-note { font-size: 0.85rem; padding: 0.35rem 0.6rem; }
+  .node-modal--wide .ribbons { left: 0.8rem; gap: 0.3rem; }
+  .node-modal--wide .ribbon { width: 1.6rem; height: 6.8rem; font-size: 0.72rem; }
 }
 .tags { display: flex; gap: 0.4rem; margin-top: 0.6rem; flex-wrap: wrap; }
 .tags span {

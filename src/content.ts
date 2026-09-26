@@ -90,8 +90,8 @@ export const projects = [
   { badge: 'debora', name: 'Débora Böhm', role: 'Psicóloga', url: 'https://www.psideborabohm.com.br/', work: ['site'] },
   {
     badge: 'hbs', name: 'High Business School', role: 'Escola de negócios', url: 'https://highbusinessschool.com/', work: ['automacao', 'parceria'],
-    note: 'Fizemos as automações, não o site',
-    linkTitle: 'Site da High Business School (o site não foi feito pela BRX; criamos o ecossistema de automações da escola)',
+    note: 'Site desenvolvido por DNG - Estúdio / Automações - BRX',
+    linkTitle: 'Site da High Business School (site desenvolvido por DNG - Estúdio; automações pela BRX)',
   },
 ] as const
 
