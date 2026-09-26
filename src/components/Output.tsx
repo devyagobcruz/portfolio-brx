@@ -8,6 +8,14 @@ function renderValue(v: Value) {
   return <>[{v.map((s, i) => <Fragment key={s}>{i > 0 && ', '}{str(s)}</Fragment>)}]</>
 }
 
+/**
+ * Uma linha do código. Linhas longas quebram dentro da caixa (sem rolagem lateral) e a
+ * continuação fica recuada, como num editor.
+ */
+function Line({ indent = 0, children }: { indent?: number; children: ReactNode }) {
+  return <span className="code-line" style={{ paddingLeft: `${indent + 2}ch` }}>{children}</span>
+}
+
 /** Caixa de saída estilo n8n: cabeçalho + bloco de código */
 function OutputBox({ title, status, children }: { title: string; status: string; children: ReactNode }) {
   return (
@@ -23,13 +31,13 @@ export function JsonOutput({ data }: { data: Record<string, Value> }) {
   const entries = Object.entries(data)
   return (
     <OutputBox title="Saída" status="1 item">
-      {'{\n'}
+      <Line>{'{'}</Line>
       {entries.map(([k, v], i) => (
-        <Fragment key={k}>
-          {'  '}<span className="k">"{k}"</span>{': '}{renderValue(v)}{i < entries.length - 1 ? ',' : ''}{'\n'}
-        </Fragment>
+        <Line key={k} indent={2}>
+          <span className="k">"{k}"</span>{': '}{renderValue(v)}{i < entries.length - 1 ? ',' : ''}
+        </Line>
       ))}
-      {'}'}
+      <Line>{'}'}</Line>
     </OutputBox>
   )
 }
@@ -38,11 +46,11 @@ export function JsonOutput({ data }: { data: Record<string, Value> }) {
 export function CodeOutput({ file, name, data }: { file: string; name: string; data: Record<string, Value> }) {
   return (
     <OutputBox title={file} status="executado">
-      <span className="k">export const</span>{` ${name} = {\n`}
+      <Line><span className="k">export const</span>{` ${name} = {`}</Line>
       {Object.entries(data).map(([k, v]) => (
-        <Fragment key={k}>{`  ${k}: `}{renderValue(v)}{',\n'}</Fragment>
+        <Line key={k} indent={2}>{`${k}: `}{renderValue(v)},</Line>
       ))}
-      {'};'}
+      <Line>{'};'}</Line>
     </OutputBox>
   )
 }

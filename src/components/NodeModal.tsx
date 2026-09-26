@@ -103,10 +103,12 @@ function ModalContent({ id, route, onOpen }: { id: ModalId; route: RouteId | nul
           <h2 id="node-modal-title">{r.headline}</h2>
           <p>{r.text}</p>
           <ul className="checklist">{r.items.map(item => <li key={item}>{item}</li>)}</ul>
-          <div className="tags">{r.tags.map(t => <span key={t}>{t}</span>)}</div>
-          <button type="button" className="link-btn" onClick={() => onOpen(other)}>
-            Ver a outra rota: {routes[other].title} →
-          </button>
+          <div className="route-foot">
+            <div className="tags">{r.tags.map(t => <span key={t}>{t}</span>)}</div>
+            <button type="button" className="link-btn" onClick={() => onOpen(other)}>
+              Ver a outra rota: {routes[other].title} →
+            </button>
+          </div>
         </>
       )
     }
